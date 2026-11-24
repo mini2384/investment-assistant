@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Stock Data Collector &amp; Briefing Tool</title>
+  <link rel="stylesheet" href="/static/style.css" />
+</head>
+<body>
+  <div class="container">
+    <header class="page-header">
+      <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
+        <h1>📈 Stock Data Collector &amp; Briefing Tool (1차 수집기 테스트)</h1>
+        <a href="/" class="secondary-btn" style="text-decoration:none;">← 3탭 메인 앱으로 이동</a>
+      </div>
+      <p class="subtitle">종목코드 6자리를 입력하면 네이버 증권 시세·밸류에이션·실적(연간/분기)과 Serper 최신 뉴스를 JSON으로 수집합니다.</p>
+    </header>
+
+    <!-- 검색 영역 -->
+    <section class="card search-section">
+      <form id="searchForm" class="search-form">
+        <input
+          type="text"
+          id="stockCodeInput"
+          maxlength="6"
+          placeholder="종목코드 6자리 입력 (예: 000660)"
+          autocomplete="off"
+        />
+        <button type="submit" id="searchBtn">데이터 수집</button>
+      </form>
+      <div class="quick-examples">
+        <span>빠른 테스트:</span>
+        <button type="button" class="chip-btn" data-code="000660">SK하이닉스 (000660)</button>
+        <button type="button" class="chip-btn" data-code="005930">삼성전자 (005930)</button>
+        <button type="button" class="chip-btn" data-code="035420">NAVER (035420)</button>
+      </div>
+    </section>
+
+    <!-- 로딩 및 에러 표시 영역 -->
+    <div id="loadingBox" class="loading-box hidden">
+      ⏳ 네이버 증권 데이터와 최신 뉴스를 수집하고 있습니다...
+    </div>
+
+    <div id="errorBanner" class="error-banner hidden"></div>
+
+    <!-- 수집 결과 영역 -->
+    <main id="resultSection" class="result-section hidden">
+      <!-- 1. 기업 프로필 및 현재 시세 -->
+      <section class="card">
+        <div class="stock-header" id="stockHeader">
+          <div>
+            <span class="badge-market" id="stockMarket">-</span>
+            <h2 id="stockName">-</h2>
+            <span class="stock-code" id="stockCode">-</span>
+          </div>
+          <div class="price-main">
+            <strong id="currentPrice" class="current-price">-</strong>
+            <span id="priceChange" class="price-change">-</span>
+          </div>
+        </div>
+
+        <div class="info-grid" id="priceGrid"></div>
+      </section>
+
+      <!-- 2. 투자정보 & 밸류에이션 / 동종업종 -->
+      <section class="card">
+        <div class="section-title-row">
+          <h3>📊 투자정보 &amp; 밸류에이션</h3>
+          <span class="unit-note" id="consensusDateNote"></span>
+        </div>
+        <div class="info-grid" id="valuationGrid"></div>
+
+        <div class="peers-box">
+          <h4>동일업종 주요 종목 비교</h4>
+          <div id="peersList" class="peers-list"></div>
+        </div>
+      </section>
+
+      <!-- 3. 기업실적분석 (연간 / 분기 분리) -->
+      <section class="card">
+        <div class="section-title-row">
+          <h3>📑 기업실적분석 (시계열)</h3>
+          <span class="unit-note">단위: 억원 (비율: %, 주당지표: 원/배) · <span class="badge-consensus">추정(E)</span></span>
+        </div>
+
+        <h4 class="table-subtitle">연간 실적 (Annual)</h4>
+        <div class="table-wrap">
+          <table class="finance-table">
+            <thead>
+              <tr>
+                <th>기간</th>
+                <th>매출액</th>
+                <th>영업이익</th>
+                <th>당기순이익</th>
+                <th>영업이익률</th>
+                <th>ROE(%)</th>
+                <th>부채비율</th>
+                <th>EPS(원)</th>
+                <th>PER(배)</th>
+                <th>PBR(배)</th>
+                <th>배당금(원)</th>
+              </tr>
+            </thead>
+            <tbody id="annualTableBody"></tbody>
+          </table>
+        </div>
+
+        <h4 class="table-subtitle">분기 실적 (Quarterly)</h4>
+        <div class="table-wrap">
+          <table class="finance-table">
+            <thead>
+              <tr>
+                <th>기간</th>
+                <th>매출액</th>
+                <th>영업이익</th>
+                <th>당기순이익</th>
+                <th>영업이익률</th>
+                <th>ROE(%)</th>
+                <th>부채비율</th>
+                <th>EPS(원)</th>
+                <th>PER(배)</th>
+                <th>PBR(배)</th>
+                <th>배당금(원)</th>
+              </tr>
+            </thead>
+            <tbody id="quarterlyTableBody"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- 4. 최신 관련 뉴스 (Serper API) -->
+      <section class="card">
+        <div class="section-title-row">
+          <h3>📰 최신 관련 뉴스 (Serper News API)</h3>
+          <span class="unit-note" id="newsCountNote"></span>
+        </div>
+        <ul id="newsList" class="news-list"></ul>
+      </section>
+
+      <!-- 5. 챗봇 전달용 원본 JSON 확인 -->
+      <section class="card">
+        <div class="section-title-row">
+          <h3>📦 수집된 원본 JSON (챗봇 전달용)</h3>
+          <button type="button" id="rawJsonToggle" class="secondary-btn">JSON 펼치기 / 접기</button>
+        </div>
+        <pre id="rawJsonOutput" class="raw-json hidden"></pre>
+      </section>
+    </main>
+  </div>
+
+  <script src="/static/test_collector.js"></script>
+</body>
+</html>

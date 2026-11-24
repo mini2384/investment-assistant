@@ -1,0 +1,656 @@
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Noto Sans KR", sans-serif;
+  background-color: #f1f5f9;
+  color: #1e293b;
+  line-height: 1.5;
+  padding: 24px 16px 48px;
+}
+
+.container {
+  max-width: 1080px;
+  margin: 0 auto;
+}
+
+.page-header {
+  margin-bottom: 20px;
+}
+
+.page-header h1 {
+  font-size: 1.65rem;
+  font-weight: 700;
+  color: #0f172a;
+  margin-bottom: 6px;
+}
+
+.subtitle {
+  font-size: 0.92rem;
+  color: #475569;
+}
+
+.card {
+  background-color: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 20px 24px;
+  margin-bottom: 18px;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.05);
+}
+
+.hidden {
+  display: none !important;
+}
+
+/* 검색 영역 */
+.search-form {
+  display: flex;
+  gap: 10px;
+}
+
+.search-form input {
+  flex: 1;
+  padding: 12px 14px;
+  font-size: 1rem;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  outline: none;
+}
+
+.search-form input:focus {
+  border-color: #2563eb;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+}
+
+.search-form button {
+  padding: 12px 22px;
+  font-size: 0.98rem;
+  font-weight: 600;
+  color: #ffffff;
+  background-color: #2563eb;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.search-form button:hover {
+  background-color: #1d4ed8;
+}
+
+.search-form button:disabled {
+  background-color: #94a3b8;
+  cursor: not-allowed;
+}
+
+.quick-examples {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+  font-size: 0.85rem;
+  color: #64748b;
+}
+
+.chip-btn {
+  padding: 5px 11px;
+  font-size: 0.82rem;
+  background-color: #f8fafc;
+  color: #334155;
+  border: 1px solid #cbd5e1;
+  border-radius: 999px;
+  cursor: pointer;
+}
+
+.chip-btn:hover {
+  background-color: #e2e8f0;
+}
+
+/* 로딩 및 에러 배너 */
+.loading-box {
+  background-color: #eff6ff;
+  border: 1px solid #bfdbfe;
+  color: #1e40af;
+  padding: 14px 18px;
+  border-radius: 10px;
+  margin-bottom: 18px;
+  font-weight: 500;
+}
+
+.error-banner {
+  background-color: #fef2f2;
+  border: 1px solid #fecaca;
+  color: #b91c1c;
+  padding: 14px 18px;
+  border-radius: 10px;
+  margin-bottom: 18px;
+  font-size: 0.92rem;
+}
+
+.error-banner ul {
+  margin-left: 18px;
+  margin-top: 4px;
+}
+
+/* 종목 헤더 및 등락 색상 (한국 증시 기준: 상승=빨강, 하락=파랑) */
+.stock-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid #e2e8f0;
+  margin-bottom: 16px;
+}
+
+.badge-market {
+  display: inline-block;
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 4px;
+  background-color: #e2e8f0;
+  color: #334155;
+  margin-bottom: 4px;
+}
+
+.stock-header h2 {
+  display: inline-block;
+  font-size: 1.5rem;
+  margin-right: 8px;
+  vertical-align: middle;
+}
+
+.stock-code {
+  font-size: 0.95rem;
+  color: #64748b;
+  font-weight: 500;
+}
+
+.price-main {
+  text-align: right;
+}
+
+.current-price {
+  display: block;
+  font-size: 1.75rem;
+  font-weight: 700;
+}
+
+.price-change {
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+
+.up {
+  color: #dc2626;
+}
+
+.down {
+  color: #2563eb;
+}
+
+.flat {
+  color: #64748b;
+}
+
+/* 정보 그리드 */
+.section-title-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+
+.section-title-row h3 {
+  font-size: 1.1rem;
+  color: #0f172a;
+}
+
+.unit-note {
+  font-size: 0.82rem;
+  color: #64748b;
+}
+
+.info-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 12px;
+}
+
+.metric-box {
+  background-color: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 10px 12px;
+}
+
+.metric-label {
+  display: block;
+  font-size: 0.78rem;
+  color: #64748b;
+  margin-bottom: 4px;
+}
+
+.metric-value {
+  font-size: 1.02rem;
+  font-weight: 600;
+  color: #0f172a;
+}
+
+/* 동종업종 비교 */
+.peers-box {
+  margin-top: 18px;
+  padding-top: 14px;
+  border-top: 1px solid #e2e8f0;
+}
+
+.peers-box h4 {
+  font-size: 0.92rem;
+  color: #334155;
+  margin-bottom: 10px;
+}
+
+.peers-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.peer-chip {
+  background-color: #f8fafc;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  padding: 6px 12px;
+  font-size: 0.85rem;
+}
+
+/* 기업실적분석 테이블 */
+.table-subtitle {
+  font-size: 0.95rem;
+  color: #334155;
+  margin: 14px 0 8px;
+}
+
+.table-wrap {
+  overflow-x: auto;
+  margin-bottom: 12px;
+}
+
+.finance-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.86rem;
+  white-space: nowrap;
+}
+
+.finance-table th,
+.finance-table td {
+  padding: 9px 10px;
+  border-bottom: 1px solid #e2e8f0;
+  text-align: right;
+}
+
+.finance-table th:first-child,
+.finance-table td:first-child {
+  text-align: left;
+  font-weight: 600;
+}
+
+.finance-table thead th {
+  background-color: #f8fafc;
+  color: #475569;
+  font-weight: 600;
+}
+
+.finance-table tr.consensus-row {
+  background-color: #fffbeb;
+}
+
+.badge-consensus {
+  display: inline-block;
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: 4px;
+  background-color: #fef3c7;
+  color: #b45309;
+  border: 1px solid #fcd34d;
+  margin-left: 4px;
+}
+
+/* 뉴스 리스트 */
+.news-list {
+  list-style: none;
+}
+
+.news-item {
+  padding: 12px 0;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.news-item:last-child {
+  border-bottom: none;
+}
+
+.news-title {
+  display: inline-block;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #1d4ed8;
+  text-decoration: none;
+  margin-bottom: 4px;
+}
+
+.news-title:hover {
+  text-decoration: underline;
+}
+
+.news-meta {
+  font-size: 0.8rem;
+  color: #64748b;
+  margin-bottom: 4px;
+}
+
+.news-desc {
+  font-size: 0.88rem;
+  color: #334155;
+}
+
+/* 원본 JSON 확인 */
+.secondary-btn {
+  padding: 6px 12px;
+  font-size: 0.82rem;
+  background-color: #f8fafc;
+  color: #334155;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.secondary-btn:hover {
+  background-color: #e2e8f0;
+}
+
+.raw-json {
+  background-color: #0f172a;
+  color: #e2e8f0;
+  padding: 14px;
+  border-radius: 8px;
+  font-size: 0.8rem;
+  overflow-x: auto;
+  max-height: 420px;
+}
+
+/* =====================================================
+   2차 확장: 3탭 네비게이션, 채팅 UI, 차트 레이아웃
+   ===================================================== */
+.header-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.nav-link-btn {
+  text-decoration: none;
+  display: inline-block;
+}
+
+.tab-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  border-bottom: 2px solid #e2e8f0;
+  padding-bottom: 10px;
+}
+
+.tab-btn {
+  padding: 10px 16px;
+  font-size: 0.94rem;
+  font-weight: 600;
+  background-color: #ffffff;
+  color: #475569;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.tab-btn:hover {
+  background-color: #f8fafc;
+  color: #0f172a;
+}
+
+.tab-btn.active {
+  background-color: #2563eb;
+  color: #ffffff;
+  border-color: #2563eb;
+}
+
+.panel-desc {
+  font-size: 0.88rem;
+  color: #475569;
+  margin-bottom: 14px;
+}
+
+.input-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.input-row input {
+  width: 220px;
+  padding: 10px 12px;
+  font-size: 0.95rem;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  outline: none;
+}
+
+.input-row input:focus {
+  border-color: #2563eb;
+}
+
+.inline-chips {
+  margin-top: 0;
+}
+
+.summary-strip {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  background-color: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 10px 14px;
+  margin-bottom: 14px;
+  font-size: 0.88rem;
+}
+
+.summary-strip span strong {
+  color: #0f172a;
+}
+
+/* 채팅 UI */
+.chat-box {
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  background-color: #f8fafc;
+  overflow: hidden;
+}
+
+.chat-messages {
+  height: 360px;
+  overflow-y: auto;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.chat-msg {
+  display: flex;
+}
+
+.chat-msg.user {
+  justify-content: flex-end;
+}
+
+.chat-msg.assistant {
+  justify-content: flex-start;
+}
+
+.chat-bubble {
+  max-width: 82%;
+  padding: 10px 14px;
+  border-radius: 12px;
+  font-size: 0.92rem;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.chat-msg.user .chat-bubble {
+  background-color: #2563eb;
+  color: #ffffff;
+  border-bottom-right-radius: 4px;
+}
+
+.chat-msg.assistant .chat-bubble {
+  background-color: #ffffff;
+  color: #1e293b;
+  border: 1px solid #e2e8f0;
+  border-bottom-left-radius: 4px;
+}
+
+.chat-input-form {
+  display: flex;
+  gap: 8px;
+  padding: 10px 12px;
+  background-color: #ffffff;
+  border-top: 1px solid #e2e8f0;
+}
+
+.chat-input-form input {
+  flex: 1;
+  padding: 10px 12px;
+  font-size: 0.94rem;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  outline: none;
+}
+
+.chat-input-form input:focus {
+  border-color: #2563eb;
+}
+
+.chat-input-form button {
+  padding: 10px 18px;
+  font-size: 0.92rem;
+  font-weight: 600;
+  background-color: #2563eb;
+  color: #ffffff;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.chat-input-form button:disabled {
+  background-color: #94a3b8;
+  cursor: not-allowed;
+}
+
+/* 차트 레이아웃 */
+.chart-two-col {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 18px;
+}
+
+.chart-canvas-wrap {
+  position: relative;
+  height: 300px;
+  margin-top: 10px;
+}
+
+.chart-canvas-wrap.tall {
+  height: 360px;
+}
+
+/* =====================================================
+   마크다운 채팅 렌더링 & 접기/펼치기 데이터 패널
+   ===================================================== */
+.data-details {
+  margin-top: 18px;
+  border-top: 1px solid #e2e8f0;
+  padding-top: 14px;
+}
+
+.data-details summary {
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 0.94rem;
+  color: #1d4ed8;
+  margin-bottom: 10px;
+}
+
+.chat-msg.assistant .chat-bubble {
+  white-space: normal;
+  line-height: 1.6;
+}
+
+.chat-bubble h2,
+.chat-bubble h3,
+.chat-bubble h4 {
+  margin: 10px 0 6px;
+  color: #0f172a;
+  font-weight: 700;
+}
+
+.chat-bubble h2 { font-size: 1.08rem; }
+.chat-bubble h3 { font-size: 1rem; }
+.chat-bubble h4 { font-size: 0.95rem; }
+
+.chat-bubble p {
+  margin: 6px 0;
+}
+
+.chat-bubble ul,
+.chat-bubble ol {
+  margin: 6px 0 8px 20px;
+}
+
+.chat-bubble li {
+  margin-bottom: 4px;
+}
+
+.chat-bubble hr {
+  border: none;
+  border-top: 1px solid #e2e8f0;
+  margin: 10px 0;
+}
+
+.chat-bubble code {
+  background-color: #f1f5f9;
+  padding: 2px 5px;
+  border-radius: 4px;
+  font-family: Consolas, monospace;
+  font-size: 0.85em;
+}
+
+.chat-bubble strong {
+  color: #0f172a;
+  font-weight: 700;
+}
