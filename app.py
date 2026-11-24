@@ -75,6 +75,8 @@ def require_pin_gate():
         "/static/style.css",
         "/static/manifest.json",
         "/static/images/app-icon.png",
+        "/static/images/app-icon-192.png",
+        "/static/images/app-icon-512.png",
     ):
         return None
     if is_pin_authenticated():
