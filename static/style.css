@@ -1077,14 +1077,35 @@ body {
 }
 
 .page-header::before {
-  content: "";
-  display: block;
+  display: none;
+}
+
+.hero-banner-wrap {
+  position: relative;
   width: 100vw;
   margin-left: calc(50% - 50vw);
-  height: clamp(460px, 56.25vw, 760px);
-  background: url("/static/images/hero-banner-wide.jpg") center top / cover no-repeat;
-  -webkit-mask-image: linear-gradient(to bottom, #000 0%, #000 84%, transparent 100%);
-  mask-image: linear-gradient(to bottom, #000 0%, #000 84%, transparent 100%);
+  overflow: hidden;
+  background-color: #d89b32;
+}
+
+.hero-banner-img {
+  display: block;
+  width: 100%;
+  height: auto;
+  max-height: 560px;
+  object-fit: cover;
+  object-position: center top;
+}
+
+.hero-banner-wrap::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 22%;
+  background: linear-gradient(to bottom, rgba(253, 245, 228, 0) 0%, #fdf5e4 100%);
+  pointer-events: none;
 }
 
 .page-header::after {
@@ -1260,8 +1281,8 @@ body {
    반응형 웹 / 모바일·태블릿 UI
    ===================================================== */
 @media (max-width: 900px) {
-  .page-header::before {
-    height: clamp(280px, 56.25vw, 500px);
+  .hero-banner-img {
+    max-height: 460px;
   }
 
   .naver-link-btn {
@@ -1278,8 +1299,16 @@ body {
     padding: 0 10px 32px;
   }
 
-  .page-header::before {
-    height: clamp(210px, 56.25vw, 360px);
+  .hero-banner-wrap {
+    width: calc(100% + 20px);
+    margin-left: -10px;
+  }
+
+  .hero-banner-img {
+    width: 100%;
+    height: auto;
+    max-height: none;
+    object-fit: contain;
   }
 
   .header-top {
