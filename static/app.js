@@ -177,6 +177,21 @@ document.addEventListener("DOMContentLoaded", () => {
   const PINNED_STORAGE_KEY = "investment_assistant_pinned_stocks_v1";
   let stockExplainLevel = "intermediate";
   let lastCollectedData = null;
+  let isRequestInFlight = false;
+
+  const globalOverlay = document.getElementById("globalLoadingOverlay");
+  const globalOverlayText = document.getElementById("globalLoadingText");
+
+  function setGlobalLoading(active, message) {
+    isRequestInFlight = active;
+    document.body.classList.toggle("is-loading", active);
+    if (globalOverlay) {
+      if (globalOverlayText && message) {
+        globalOverlayText.textContent = message;
+      }
+      globalOverlay.classList.toggle("hidden", !active);
+    }
+  }
 
   function loadPinnedStocks() {
     try {
@@ -703,6 +718,7 @@ document.addEventListener("DOMContentLoaded", () => {
   resetStockChatBtn.addEventListener("click", resetStockChat);
 
   async function runInitialStockAnalysis(code) {
+    if (isRequestInFlight) return;
     if (!code) {
       window.InvestmentApp.showError(stockTabError, "종목코드 6자리를 입력해 주세요.");
       return;
@@ -710,7 +726,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     window.InvestmentApp.stockConversationId = null;
     window.InvestmentApp.showError(stockTabError, "");
-    document.body.classList.add("is-loading");
+    setGlobalLoading(true, `${code} 데이터를 수집하고 AI 분석 중입니다...`);
     stockAnalyzeBtn.disabled = true;
     stockAnalyzeBtn.textContent = "⏳ 분석 중...";
     stockChatSendBtn.disabled = true;
@@ -752,7 +768,7 @@ document.addEventListener("DOMContentLoaded", () => {
       window.InvestmentApp.showError(stockTabError, `서버 통신 오류: ${err.message}`);
       console.error(`[ERROR]   탭1 통신 오류: ${err.message}`);
     } finally {
-      document.body.classList.remove("is-loading");
+      setGlobalLoading(false);
       stockAnalyzeBtn.disabled = false;
       stockAnalyzeBtn.textContent = "종목 조회 & AI 분석";
       stockChatSendBtn.disabled = false;
@@ -777,6 +793,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   stockChatForm.addEventListener("submit", async (e) => {
     e.preventDefault();
+    if (isRequestInFlight) return;
     const code = stockTabCode.value.trim();
     const query = stockChatInput.value.trim();
     if (!query) return;
@@ -784,7 +801,7 @@ document.addEventListener("DOMContentLoaded", () => {
     window.InvestmentApp.showError(stockTabError, "");
     window.InvestmentApp.appendChatMessage(stockChatMessages, "user", query);
     stockChatInput.value = "";
-    document.body.classList.add("is-loading");
+    setGlobalLoading(true, "AI 애널리스트가 답변을 작성 중입니다...");
     stockChatSendBtn.disabled = true;
     stockChatSendBtn.textContent = "⏳ 전송 중...";
 
@@ -829,7 +846,7 @@ document.addEventListener("DOMContentLoaded", () => {
       window.InvestmentApp.showError(stockTabError, `서버 통신 오류: ${err.message}`);
       console.error(`[ERROR]   탭1 통신 오류: ${err.message}`);
     } finally {
-      document.body.classList.remove("is-loading");
+      setGlobalLoading(false);
       stockChatSendBtn.disabled = false;
       stockChatSendBtn.textContent = "전송";
       stockChatMessages.scrollTop = stockChatMessages.scrollHeight;

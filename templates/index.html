@@ -4,6 +4,10 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>나의 투자도우미 (My Investment Assistant)</title>
+  <link rel="icon" type="image/png" href="/static/images/app-icon.png" />
+  <link rel="apple-touch-icon" href="/static/images/app-icon.png" />
+  <link rel="manifest" href="/static/manifest.json" />
+  <meta name="theme-color" content="#d89b32" />
   <link rel="stylesheet" href="/static/style.css" />
 </head>
 <body>
@@ -438,6 +442,13 @@
         </details>
       </div>
     </section>
+  </div>
+
+  <div id="globalLoadingOverlay" class="global-loading-overlay hidden" role="status" aria-live="polite">
+    <div class="global-loading-card">
+      <div class="loading-spinner" aria-hidden="true"></div>
+      <div id="globalLoadingText" class="global-loading-text">처리 중입니다... 잠시만 기다려 주세요.</div>
+    </div>
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>

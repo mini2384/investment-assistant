@@ -52,6 +52,51 @@ body.is-loading * {
   cursor: progress !important;
 }
 
+/* 중복 클릭 방지 전역 로딩 인디케이터 오버레이 */
+.global-loading-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: rgba(253, 245, 228, 0.55);
+  backdrop-filter: blur(2px);
+  pointer-events: all;
+}
+
+.global-loading-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 24px 32px;
+  background-color: #fffdf8;
+  border: 1.5px solid #e6d0a4;
+  border-radius: 18px;
+  box-shadow: 0 14px 34px rgba(130, 86, 20, 0.2);
+}
+
+.loading-spinner {
+  width: 38px;
+  height: 38px;
+  border: 4px solid #d5f2f6;
+  border-top-color: #1392a4;
+  border-radius: 50%;
+  animation: spinLoader 0.8s linear infinite;
+}
+
+.global-loading-text {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #2d2116;
+  text-align: center;
+}
+
+@keyframes spinLoader {
+  to { transform: rotate(360deg); }
+}
+
 /* 검색 영역 */
 .search-form {
   display: flex;
@@ -1209,4 +1254,123 @@ body {
 .chat-msg.assistant .chat-bubble {
   background-color: #ffffff;
   border-color: #eedcb8;
+}
+
+/* =====================================================
+   반응형 웹 / 모바일·태블릿 UI
+   ===================================================== */
+@media (max-width: 900px) {
+  .page-header::before {
+    height: clamp(280px, 56.25vw, 500px);
+  }
+
+  .naver-link-btn {
+    margin-left: 0;
+  }
+
+  .info-grid {
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  }
+}
+
+@media (max-width: 640px) {
+  body {
+    padding: 0 10px 32px;
+  }
+
+  .page-header::before {
+    height: clamp(210px, 56.25vw, 360px);
+  }
+
+  .header-top {
+    padding: 8px 0 0;
+  }
+
+  .nav-link-btn {
+    width: 100%;
+    text-align: center;
+  }
+
+  .tab-nav {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+    padding: 10px 0 4px;
+  }
+
+  .tab-btn {
+    padding: 9px 8px;
+    font-size: 0.8rem;
+    text-align: center;
+    justify-content: center;
+  }
+
+  .naver-link-btn {
+    grid-column: 1 / -1;
+    margin-left: 0;
+    justify-content: center;
+  }
+
+  .card {
+    padding: 16px 14px;
+    border-radius: 14px;
+  }
+
+  .search-form,
+  .chat-input-form,
+  .avg-edit-form {
+    flex-direction: column;
+  }
+
+  .search-form button,
+  .chat-input-form button,
+  .avg-edit-form button {
+    width: 100%;
+  }
+
+  .stock-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .price-main {
+    text-align: left;
+  }
+
+  .info-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+  }
+
+  .average-price-list {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+
+  .consensus-widget {
+    max-width: 100%;
+    padding: 14px 12px;
+  }
+
+  .consensus-graph {
+    gap: 4px;
+  }
+
+  .consensus-step-label {
+    font-size: 0.7rem;
+  }
+
+  .table-wrap {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .chat-messages {
+    max-height: 360px;
+  }
+
+  .chat-bubble {
+    max-width: 92%;
+    font-size: 0.9rem;
+  }
 }

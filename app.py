@@ -1,13 +1,17 @@
 import os
 import re
 import json
+import time
+import hmac
+import secrets
 import logging
+from pathlib import Path
 from datetime import datetime, timedelta
 import requests
 import numpy as np
 import pandas as pd
 import FinanceDataReader as fdr
-from flask import Flask, jsonify, request, render_template
+from flask import Flask, jsonify, request, render_template, session
 from dotenv import load_dotenv
 from collector import collect_stock_data, fetch_naver_json
 
@@ -23,6 +27,117 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 app = Flask(__name__)
+app.secret_key = os.getenv("FLASK_SECRET_KEY", "").strip() or secrets.token_hex(32)
+app.config["SESSION_COOKIE_HTTPONLY"] = True
+app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
+app.permanent_session_lifetime = timedelta(hours=1)
+
+PIN_MAX_ATTEMPTS = 5
+PIN_LOCKOUT_SECONDS = 14 * 3600
+PIN_SESSION_SECONDS = 3600
+PIN_LOCK_FILE = Path(__file__).resolve().parent / ".pin_lock.json"
+
+
+def _load_lock_state():
+    if not PIN_LOCK_FILE.exists():
+        return {}
+    try:
+        data = json.loads(PIN_LOCK_FILE.read_text(encoding="utf-8"))
+        return data if isinstance(data, dict) else {}
+    except Exception:
+        return {}
+
+
+def _save_lock_state(state):
+    try:
+        PIN_LOCK_FILE.write_text(json.dumps(state), encoding="utf-8")
+    except Exception as e:
+        logger.warning(f"[AUTH] 잠금 상태 저장 실패: {e}")
+
+
+def _client_key():
+    return request.remote_addr or "local"
+
+
+def is_pin_authenticated():
+    unlocked_until = session.get("unlocked_until", 0)
+    return isinstance(unlocked_until, (int, float)) and time.time() < unlocked_until
+
+
+@app.before_request
+def require_pin_gate():
+    path = request.path or "/"
+    if path in (
+        "/api/auth/login",
+        "/api/auth/logout",
+        "/static/style.css",
+        "/static/manifest.json",
+        "/static/images/app-icon.png",
+    ):
+        return None
+    if is_pin_authenticated():
+        return None
+    if path.startswith("/api/") or path == "/health":
+        return jsonify({"error": "인증이 필요합니다."}), 401
+    return render_template("login.html"), 200
+
+
+@app.route("/api/auth/login", methods=["POST"])
+def auth_login():
+    """4자리 비밀번호 검증 (1시간 유지, 5회 실패 시 14시간 잠금)"""
+    data = request.get_json(silent=True) or {}
+    entered_pin = str(data.get("pin", "")).strip()
+    expected_pin = os.getenv("APP_PIN", "").strip()
+
+    if not expected_pin:
+        return jsonify({"error": "서버에 비밀번호가 설정되지 않았습니다."}), 500
+
+    now = time.time()
+    key = _client_key()
+    state = _load_lock_state()
+    rec = state.get(key, {"attempts": 0, "locked_until": 0})
+
+    locked_until = float(rec.get("locked_until", 0))
+    if locked_until > now:
+        rem = int(locked_until - now)
+        hrs = rem // 3600
+        mins = (rem % 3600 + 59) // 60
+        return jsonify({
+            "error": f"입력 횟수 초과로 잠금 상태입니다. 약 {hrs}시간 {mins}분 후 다시 시도해 주세요."
+        }), 429
+
+    if locked_until and locked_until <= now:
+        rec = {"attempts": 0, "locked_until": 0}
+
+    if len(entered_pin) == 4 and hmac.compare_digest(entered_pin, expected_pin):
+        state[key] = {"attempts": 0, "locked_until": 0}
+        _save_lock_state(state)
+        session.permanent = True
+        session["unlocked_until"] = now + PIN_SESSION_SECONDS
+        logger.info(f"[AUTH] 접속 인증 성공 (client={key})")
+        return jsonify({"ok": True}), 200
+
+    attempts = int(rec.get("attempts", 0)) + 1
+    if attempts >= PIN_MAX_ATTEMPTS:
+        state[key] = {"attempts": attempts, "locked_until": now + PIN_LOCKOUT_SECONDS}
+        _save_lock_state(state)
+        logger.warning(f"[AUTH] 5회 실패로 14시간 잠금 (client={key})")
+        return jsonify({
+            "error": "비밀번호를 5회 틀려 14시간 동안 접속이 제한됩니다."
+        }), 429
+
+    state[key] = {"attempts": attempts, "locked_until": 0}
+    _save_lock_state(state)
+    remaining = PIN_MAX_ATTEMPTS - attempts
+    return jsonify({
+        "error": f"비밀번호가 올바르지 않습니다. (남은 기회: {remaining}회)"
+    }), 401
+
+
+@app.route("/api/auth/logout", methods=["POST"])
+def auth_logout():
+    session.clear()
+    return jsonify({"ok": True}), 200
 
 
 @app.route("/", methods=["GET"])

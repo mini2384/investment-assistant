@@ -1,0 +1,16 @@
+{
+  "name": "나의 투자도우미 (My Investment Assistant)",
+  "short_name": "나의 투자도우미",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#fdf5e4",
+  "theme_color": "#d89b32",
+  "icons": [
+    {
+      "src": "/static/images/app-icon.png",
+      "sizes": "any",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
