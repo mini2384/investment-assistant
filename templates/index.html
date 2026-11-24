@@ -22,6 +22,8 @@
         <button type="button" class="tab-btn active" data-tab="stock">🔍 탭 1. 종목 심층분석 채팅</button>
         <button type="button" class="tab-btn" data-tab="rebalance">⚖️ 탭 2. 리밸런싱 도우미</button>
         <button type="button" class="tab-btn" data-tab="ta">📈 탭 3. 기술지표 차트 + 채팅</button>
+        <button type="button" class="tab-btn" data-tab="summary">🐣 탭 4. 주린이를 위한 한줄 정리</button>
+        <a href="https://stock.naver.com/" target="_blank" rel="noopener noreferrer" class="tab-btn naver-link-btn">🟢 네이버 증권 바로가기 ↗</a>
       </nav>
     </header>
 
@@ -34,17 +36,60 @@
           <h3>🔍 종목 조회 &amp; AI 심층분석 채팅 (Dify 챗봇①)</h3>
           <button type="button" id="resetStockChatBtn" class="secondary-btn">새 대화 시작</button>
         </div>
-        <p class="panel-desc">종목코드 6자리를 입력하고 <strong>종목 조회 &amp; AI 분석</strong>을 누르면, 네이버 금융·Serper 뉴스 데이터를 수집해 표로 보여주고 동시에 전문가 프롬프트로 1차 심층 리포트를 생성합니다. 이후 이어서 채팅으로 질문하세요.</p>
+        <p class="panel-desc">국내 종목코드(6자리) 또는 미국·글로벌 티커(예: <code>AAPL</code>, <code>NVDA</code>)를 입력하고 <strong>종목 조회 &amp; AI 분석</strong>을 누르면, 네이버 금융·Serper 뉴스 데이터를 수집해 표로 보여주고 동시에 전문가 프롬프트로 1차 심층 리포트를 생성합니다.</p>
 
         <form id="stockAnalyzeForm" class="search-form">
-          <input type="text" id="stockTabCode" maxlength="6" placeholder="종목코드 6자리 입력 (예: 000660)" value="000660" autocomplete="off" />
+          <input type="text" id="stockTabCode" maxlength="15" placeholder="국내 6자리 코드(000660) 또는 해외 티커(AAPL, NVDA)" value="000660" autocomplete="off" />
           <button type="submit" id="stockAnalyzeBtn">종목 조회 &amp; AI 분석</button>
         </form>
+        <div id="pinnedStocksRow" class="quick-examples pinned-row hidden" style="margin-top: 10px;">
+          <span>⭐ 고정 관심종목:</span>
+          <div id="pinnedStocksList" class="pinned-list"></div>
+        </div>
         <div class="quick-examples">
-          <span>빠른 선택:</span>
-          <button type="button" class="chip-btn stock-chip" data-code="000660">SK하이닉스 (000660)</button>
-          <button type="button" class="chip-btn stock-chip" data-code="005930">삼성전자 (005930)</button>
-          <button type="button" class="chip-btn stock-chip" data-code="035420">NAVER (035420)</button>
+          <span>🇰🇷 국내 빠른 선택:</span>
+          <span class="chip-group">
+            <button type="button" class="chip-btn stock-chip" data-code="000660">SK하이닉스 (000660)</button>
+            <button type="button" class="pin-btn" data-code="000660" data-label="SK하이닉스 (000660)" title="관심종목 고정/해제" aria-label="SK하이닉스 고정">📌</button>
+          </span>
+          <span class="chip-group">
+            <button type="button" class="chip-btn stock-chip" data-code="005930">삼성전자 (005930)</button>
+            <button type="button" class="pin-btn" data-code="005930" data-label="삼성전자 (005930)" title="관심종목 고정/해제" aria-label="삼성전자 고정">📌</button>
+          </span>
+          <span class="chip-group">
+            <button type="button" class="chip-btn stock-chip" data-code="035420">NAVER (035420)</button>
+            <button type="button" class="pin-btn" data-code="035420" data-label="NAVER (035420)" title="관심종목 고정/해제" aria-label="NAVER 고정">📌</button>
+          </span>
+          <span class="chip-group">
+            <button type="button" class="chip-btn stock-chip" data-code="069500">KODEX 200 (069500)</button>
+            <button type="button" class="pin-btn" data-code="069500" data-label="KODEX 200 (069500)" title="관심종목 고정/해제" aria-label="KODEX 200 고정">📌</button>
+          </span>
+        </div>
+        <div class="quick-examples" style="margin-top: 8px;">
+          <span>🌎 미국·글로벌 빠른 선택:</span>
+          <span class="chip-group">
+            <button type="button" class="chip-btn stock-chip" data-code="AAPL">애플 (AAPL)</button>
+            <button type="button" class="pin-btn" data-code="AAPL" data-label="애플 (AAPL)" title="관심종목 고정/해제" aria-label="애플 고정">📌</button>
+          </span>
+          <span class="chip-group">
+            <button type="button" class="chip-btn stock-chip" data-code="NVDA">엔비디아 (NVDA)</button>
+            <button type="button" class="pin-btn" data-code="NVDA" data-label="엔비디아 (NVDA)" title="관심종목 고정/해제" aria-label="엔비디아 고정">📌</button>
+          </span>
+          <span class="chip-group">
+            <button type="button" class="chip-btn stock-chip" data-code="TSLA">테슬라 (TSLA)</button>
+            <button type="button" class="pin-btn" data-code="TSLA" data-label="테슬라 (TSLA)" title="관심종목 고정/해제" aria-label="테슬라 고정">📌</button>
+          </span>
+          <span class="chip-group">
+            <button type="button" class="chip-btn stock-chip" data-code="MSFT">마이크로소프트 (MSFT)</button>
+            <button type="button" class="pin-btn" data-code="MSFT" data-label="마이크로소프트 (MSFT)" title="관심종목 고정/해제" aria-label="마이크로소프트 고정">📌</button>
+          </span>
+        </div>
+
+        <div class="level-selector" role="group" aria-label="주식 이해도별 설명 수준">
+          <span class="level-label">설명 수준:</span>
+          <button type="button" class="level-btn" data-level="beginner" title="주식 입문자용: 용어 풀이·쉬운 비유 중심">🌱 초급</button>
+          <button type="button" class="level-btn active" data-level="intermediate" title="일반 투자자용: 핵심 지표 해석과 실전 전략 균형">📘 중급</button>
+          <button type="button" class="level-btn" data-level="advanced" title="숙련 투자자용: 멀티플·재무·리스크 정량 심층 분석">🧠 고급</button>
         </div>
 
         <div id="stockLoading" class="loading-box hidden" style="margin-top: 12px; margin-bottom: 0;">
@@ -75,6 +120,49 @@
             <span class="unit-note" id="tab1ConsensusDate"></span>
           </div>
           <div class="info-grid" id="tab1ValuationGrid"></div>
+
+          <!-- 네이버 금융 스타일 컨센서스 위젯 -->
+          <div id="tab1ConsensusWidget" class="consensus-widget hidden">
+            <div class="consensus-header">
+              <a id="tab1ConsensusLink" href="#" target="_blank" rel="noopener noreferrer" class="consensus-title-link">
+                <span>컨센서스</span>
+                <svg fill="none" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="15" height="15">
+                  <path d="M8.29394 3.29202C8.66041 2.92657 9.2395 2.90415 9.63183 3.22464L9.708 3.29397L17.708 11.3145C17.8953 11.5023 18.0003 11.7573 18 12.0225C17.9996 12.2877 17.8938 12.5422 17.706 12.7295L9.70605 20.708C9.31501 21.098 8.68198 21.0971 8.29199 20.7061C7.90202 20.315 7.90292 19.682 8.29394 19.292L15.585 12.0196L8.29199 4.70608L8.22363 4.62991C7.90383 4.23672 7.92736 3.65764 8.29394 3.29202Z" fill="currentColor"></path>
+                </svg>
+              </a>
+            </div>
+            <div class="consensus-graph" id="tab1ConsensusGraph">
+              <div class="consensus-step" data-step="1">
+                <div class="consensus-bar"><span class="consensus-score"></span></div>
+                <span class="consensus-step-label">적극매도</span>
+              </div>
+              <div class="consensus-step" data-step="2">
+                <div class="consensus-bar"><span class="consensus-score"></span></div>
+                <span class="consensus-step-label">매도</span>
+              </div>
+              <div class="consensus-step" data-step="3">
+                <div class="consensus-bar"><span class="consensus-score"></span></div>
+                <span class="consensus-step-label">중립</span>
+              </div>
+              <div class="consensus-step" data-step="4">
+                <div class="consensus-bar"><span class="consensus-score"></span></div>
+                <span class="consensus-step-label">매수</span>
+              </div>
+              <div class="consensus-step" data-step="5">
+                <div class="consensus-bar"><span class="consensus-score"></span></div>
+                <span class="consensus-step-label">적극매수</span>
+              </div>
+            </div>
+            <div class="consensus-target-row">
+              <span class="consensus-target-label">목표주가</span>
+              <strong id="tab1ConsensusTargetPrice" class="consensus-target-value">-</strong>
+            </div>
+            <ul class="consensus-desc-list">
+              <li>최근 3개월간 증권사에서 발표한 전망치의 평균값입니다.</li>
+              <li id="tab1ConsensusProviderDate">에프앤가이드 제공</li>
+            </ul>
+            <div id="tab1ConsensusGuide" class="level-guide-box hidden"></div>
+          </div>
 
           <div class="peers-box">
             <h4>동일업종 주요 종목 비교</h4>
@@ -125,6 +213,32 @@
                 </thead>
                 <tbody id="tab1QuarterlyBody"></tbody>
               </table>
+            </div>
+
+            <div id="tab1ConsensusTableSection">
+              <h4 class="table-subtitle">컨센서스 목록 (실적 &amp; 추정치)</h4>
+              <div id="tab1ConsensusTableGuide" class="level-guide-box hidden" style="margin-bottom: 10px;"></div>
+              <div class="table-wrap">
+                <table class="finance-table">
+                  <thead>
+                    <tr>
+                      <th>재무연월</th>
+                      <th>매출액(억원)</th>
+                      <th>YoY(%)</th>
+                      <th>영업이익(억원)</th>
+                      <th>당기순이익(억원)</th>
+                      <th>EPS(원)</th>
+                      <th>BPS(원)</th>
+                      <th>PER(배)</th>
+                      <th>PBR(배)</th>
+                      <th>ROE(%)</th>
+                      <th>EV/EBITDA(배)</th>
+                      <th>주재무제표</th>
+                    </tr>
+                  </thead>
+                  <tbody id="tab1ConsensusBody"></tbody>
+                </table>
+              </div>
             </div>
 
             <h4 class="table-subtitle">📰 최신 관련 뉴스 (Serper API)</h4>
@@ -262,6 +376,66 @@
             </form>
           </div>
         </div>
+      </div>
+    </section>
+
+    <!-- =====================================================
+         탭 4: 주린이를 위한 한줄 정리 (컨센서스 + 투자자 평균 현황 표)
+         ===================================================== -->
+    <section id="tab-summary" class="tab-panel hidden">
+      <div class="card">
+        <div class="section-title-row">
+          <h3>🐣 주린이를 위한 한줄 정리</h3>
+          <span class="unit-note" id="tab4StockLabel">탭 1에서 종목을 조회하면 해당 종목의 컨센서스가 자동 반영됩니다</span>
+        </div>
+        <p class="panel-desc">어려운 숫자를 한눈에 이해할 수 있도록 <strong>전문가 컨센서스</strong>와 <strong>실제 투자자 평균 단가·수익률</strong>을 표로 묶어 한 줄로 정리해 드립니다.</p>
+
+        <div id="tab4OneLineBox" class="oneline-summary-box"></div>
+
+        <!-- 투자자 평균 단가 요약 카드 -->
+        <div class="average-price-box">
+          <ul class="average-price-list">
+            <li class="avg-item">
+              <span class="avg-label">총 투자자</span>
+              <span id="tab4TotalInvestors" class="avg-value">237,947명</span>
+            </li>
+            <li class="avg-item">
+              <span class="avg-label">평균 단가</span>
+              <span id="tab4AvgPrice" class="avg-value">1,635,748원</span>
+            </li>
+            <li class="avg-item">
+              <span class="avg-label">평균 수익률</span>
+              <span id="tab4AvgReturn" class="avg-value down">-28.29%</span>
+            </li>
+          </ul>
+        </div>
+
+        <!-- 컨센서스 + 투자자 평균 현황 통합 표 -->
+        <h4 class="table-subtitle" style="margin-top: 18px;">📊 컨센서스 &amp; 투자자 현황 한눈에 보기</h4>
+        <div class="table-wrap">
+          <table class="finance-table summary-table">
+            <thead>
+              <tr>
+                <th>구분</th>
+                <th>지표</th>
+                <th>수치</th>
+                <th>주린이 한줄 해설</th>
+              </tr>
+            </thead>
+            <tbody id="tab4SummaryBody"></tbody>
+          </table>
+        </div>
+
+        <!-- 다른 종목의 네이버 평균단가 수치를 직접 반영할 수 있는 입력 폼 -->
+        <details class="data-details" style="margin-top: 16px;">
+          <summary>✏️ 투자자 평균 단가·수익률 직접 수정하기 (다른 종목 적용 시)</summary>
+          <form id="tab4AvgForm" class="avg-edit-form">
+            <input type="text" id="tab4InputInvestors" value="237,947명" placeholder="총 투자자 (예: 237,947명)" />
+            <input type="text" id="tab4InputAvgPrice" value="1,635,748원" placeholder="평균 단가 (예: 1,635,748원)" />
+            <input type="text" id="tab4InputAvgReturn" value="-28.29%" placeholder="평균 수익률 (예: -28.29%)" />
+            <button type="submit">표에 반영</button>
+          </form>
+        </details>
       </div>
     </section>
   </div>

@@ -143,6 +143,24 @@ def call_dify_chat(api_key, query, conversation_id="", user_id="investment-user"
     return answer, new_conv_id
 
 
+LEVEL_INSTRUCTIONS = {
+    "beginner": (
+        "설명 수준: [초급 - 주식 입문자]\n"
+        "- PER, PBR, ROE, EV/EBITDA, 컨센서스, 괴리율 같은 전문 용어가 나올 때마다 괄호나 짧은 문장으로 쉬운 비유와 뜻을 함께 설명해 주세요.\n"
+        "- 복잡한 재무 수치 나열은 줄이고, '이 회사가 돈을 잘 버는지 / 주가가 비싼 편인지 싼 편인지 / 지금 무엇을 조심해야 하는지'를 일상 언어로 친절하게 풀어주세요."
+    ),
+    "intermediate": (
+        "설명 수준: [중급 - 일반 투자자]\n"
+        "- 기본 투자 용어(PER, PBR, ROE, 컨센서스)는 알고 있는 독자를 대상으로 핵심 지표의 의미와 전후 맥락을 균형 있게 해석해 주세요.\n"
+        "- 데이터 수치 근거와 실전적인 대응 전략(매수·보유·축소 기준)을 명확하고 읽기 쉽게 제시하세요."
+    ),
+    "advanced": (
+        "설명 수준: [고급 - 숙련 투자자/애널리스트]\n"
+        "- 기초 용어 설명은 생략하고, 멀티플 리레이팅/디레이팅 논리, 매출 YoY 및 영업레버리지 추세, ROE-PBR 정합성, EV/EBITDA 밸류에이션, 컨센서스 상·하향 리스크와 정량적 손익비 시나리오를 압축적이고 깊이 있게 분석하세요."
+    ),
+}
+
+
 @app.route("/api/chat/stock", methods=["POST"])
 def chat_stock():
     """[탭 1] 종목 데이터 수집 후 Dify 종목분석기 챗봇 API 연동 대화"""
@@ -150,21 +168,25 @@ def chat_stock():
     code = str(data.get("code", "")).strip()
     query = str(data.get("query", "")).strip()
     mode = str(data.get("mode", "chat")).strip()
+    level = str(data.get("level", "intermediate")).strip()
+    if level not in LEVEL_INSTRUCTIONS:
+        level = "intermediate"
+    level_guide = LEVEL_INSTRUCTIONS[level]
     conversation_id = str(data.get("conversation_id", "")).strip()
 
-    logger.info(f"[REQUEST]  POST /api/chat/stock code={code}, mode={mode}, conversation_id={conversation_id or 'NEW'}")
+    logger.info(f"[REQUEST]  POST /api/chat/stock code={code}, mode={mode}, level={level}, conversation_id={conversation_id or 'NEW'}")
 
     if mode != "initial_analysis" and not query:
         return jsonify({"error": "질문 내용을 입력해 주세요."}), 400
 
     collected_data = None
-    dify_query = query
+    dify_query = f"[{level_guide}]\n\n{query}" if query else query
 
     # 새 대화 시작 시(conversation_id 없음) 또는 initial_analysis 모드에서는 종목 데이터를 수집해 전문가 프롬프트에 합성
     if not conversation_id or mode == "initial_analysis":
         conversation_id = ""
-        if not re.fullmatch(r"\d{6}", code):
-            return jsonify({"error": "새 분석을 시작하려면 6자리 종목코드(예: 000660)를 입력해 주세요."}), 400
+        if not re.fullmatch(r"[A-Za-z0-9.\-]{1,15}", code):
+            return jsonify({"error": "새 분석을 시작하려면 국내 6자리 종목코드(예: 000660) 또는 해외 티커(예: AAPL, NVDA)를 입력해 주세요."}), 400
 
         collected_data = collect_stock_data(code)
         logger.info(
@@ -183,7 +205,7 @@ def chat_stock():
                 f"'{stock_name}({code})'에 대한 종합 심층 분석 리포트를 작성해 주세요.\n"
                 "아래 5개 항목을 구조화된 마크다운(제목, 글머리 기호, 굵은 강조)으로 정리해 주세요:\n"
                 "1. **현재 주가 위치 및 수급** (현재가, 52주 최고/최저 대비 위치, 거래대금, 외인소진율)\n"
-                "2. **밸류에이션 및 시장 기대치** (PER vs 추정PER 비교, PBR/BPS, 목표주가 괴리율, 동종업종 대비)\n"
+                "2. **밸류에이션 및 시장 기대치** (PER vs 추정PER 비교, PBR/BPS, 목표주가 괴리율, 동종업종 대비, `consensus_table` 기반 향후 3년 매출 YoY·영업이익·EPS·EV/EBITDA 컨센서스 추이)\n"
                 "3. **연간·분기 실적 추세 및 재무 안정성** (매출/영업이익/영업이익률 흐름, ROE, 부채비율, 배당 — 추정치(E)는 반드시 추정치임을 명시)\n"
                 "4. **최신 뉴스 핵심 이슈** (수집된 뉴스 기사 기반 핵심 쟁점 요약)\n"
                 "5. **PB 종합 결론 및 대응 전략** (데이터 근거 기반 현재 포지션 의견: 비중확대/보유/축소 중 명확한 방향 제시 및 핵심 리스크·기준선)"
@@ -191,11 +213,20 @@ def chat_stock():
         else:
             user_instruction = query
 
+        currency = collected_data.get("profile", {}).get("currency", "KRW")
+        fin_unit = collected_data.get("financials", {}).get("unit", "억원")
+        unit_note = (
+            f"(주의: 이 종목의 주가·목표주가는 '{currency}' 기준이며, financials의 매출액·영업이익·순이익 단위는 '{fin_unit}'입니다. 통화와 자릿수를 정확히 지켜주세요.)"
+            if currency != "KRW"
+            else "(주의: financials의 매출액·영업이익·순이익 숫자는 이미 '억 원' 단위입니다. 예: 327657은 327,657억 원 = 약 32조 7,657억 원입니다. 자릿수를 임의로 줄이지 마세요.)"
+        )
+
         dify_query = (
             f"당신은 사용자 개인을 전담하는 시니어 프라이빗 뱅커(PB)이자 퀀트 애널리스트입니다.\n"
             f"이 대화는 개인 자산관리 의사결정을 돕기 위한 사적 분석이므로, 사용자가 보유/매도/매수 중 선택을 요청할 때는 양비론으로 회피하지 말고 수집된 데이터에 근거해 가장 합리적인 **단 하나의 명확한 전략(PB 결론)**과 그 이유, 그리고 판단을 바꿀 기준 조건(가격·실적)을 직접적으로 제시하세요.\n"
             f"단, 모든 수치와 팩트는 반드시 아래 JSON 데이터에 근거해야 하며 없는 수치는 지어내지 마세요.\n"
-            f"(주의: financials의 매출액·영업이익·순이익 숫자는 이미 '억 원' 단위입니다. 예: 327657은 327,657억 원 = 약 32조 7,657억 원입니다. 자릿수를 임의로 줄이지 마세요.)\n\n"
+            f"{unit_note}\n\n"
+            f"{level_guide}\n\n"
             f"[수집된 종목 데이터 JSON]\n{context_json}\n\n"
             f"[분석 요청]\n{user_instruction}"
         )

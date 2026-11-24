@@ -1,6 +1,7 @@
 import os
 import re
 import logging
+from datetime import datetime
 import requests
 
 logger = logging.getLogger(__name__)
@@ -68,13 +69,53 @@ def fetch_naver_json(url, timeout=10):
     return response.json()
 
 
+def resolve_global_reuters_code(ticker, timeout=10):
+    """
+    미국/글로벌 티커(예: AAPL, NVDA, TSLA, KO, AAPL.O 등)를
+    네이버 해외주식 API에서 사용하는 reutersCode(예: AAPL.O, KO)로 변환한다.
+    """
+    q = str(ticker or "").strip().upper()
+    if not q:
+        raise ValueError("종목코드 또는 티커를 입력해 주세요.")
+
+    if "." in q:
+        test_url = f"https://api.stock.naver.com/stock/{q}/basic"
+        try:
+            r = requests.get(test_url, headers=DEFAULT_HEADERS, timeout=timeout)
+            if r.status_code == 200 and r.json().get("stockName"):
+                return q
+        except Exception:
+            pass
+
+    ac_url = "https://ac.stock.naver.com/ac"
+    resp = requests.get(ac_url, params={"q": q, "target": "stock"}, headers=DEFAULT_HEADERS, timeout=timeout)
+    resp.raise_for_status()
+    items = resp.json().get("items") or []
+
+    non_kor = [it for it in items if it.get("nationCode") != "KOR"]
+    for it in non_kor:
+        if str(it.get("code") or "").upper() == q or str(it.get("reutersCode") or "").upper() == q:
+            return it.get("reutersCode") or it.get("code")
+    if non_kor:
+        return non_kor[0].get("reutersCode") or non_kor[0].get("code")
+    if items:
+        return items[0].get("reutersCode") or items[0].get("code")
+
+    raise ValueError(f"해외 종목 '{q}'을(를) 네이버 증권에서 찾을 수 없습니다.")
+
+
 def extract_profile_and_price(basic_data, integration_data):
     """
     basic 및 integration JSON 응답에서
     1) 기업 프로필(profile)과 2) 시세 정보(price_info)를 추출한다.
+    국내/해외 주식 응답 구조를 모두 지원한다.
     """
-    # totalInfos 리스트를 code 기준 딕셔너리로 변환하여 빠르게 조회
+    # totalInfos / stockItemTotalInfos 리스트를 code 기준 딕셔너리로 변환하여 빠르게 조회
     total_infos = {}
+    for item in basic_data.get("stockItemTotalInfos", []):
+        code_key = item.get("code")
+        if code_key:
+            total_infos[code_key] = item.get("value")
     for item in integration_data.get("totalInfos", []):
         code_key = item.get("code")
         if code_key:
@@ -82,12 +123,24 @@ def extract_profile_and_price(basic_data, integration_data):
 
     # 1) 기업 프로필 추출
     exchange_info = basic_data.get("stockExchangeType") or {}
-    market_name = exchange_info.get("nameKor") or exchange_info.get("name") or "KOSPI"
+    market_name = (
+        basic_data.get("stockExchangeName")
+        or exchange_info.get("nameKor")
+        or exchange_info.get("name")
+        or "KOSPI"
+    )
     stock_name = basic_data.get("stockName") or integration_data.get("stockName")
+    currency_code = ((basic_data.get("currencyType") or {}).get("code") or "KRW").upper()
+    is_global = currency_code != "KRW"
 
     profile = {
+        "code": basic_data.get("symbolCode") or basic_data.get("itemCode") or basic_data.get("reutersCode"),
+        "reuters_code": basic_data.get("reutersCode"),
         "name": stock_name,
         "market": market_name,
+        "nation": basic_data.get("nationName") or "대한민국",
+        "currency": currency_code,
+        "is_global": is_global,
         "industry_code": integration_data.get("industryCode")
     }
 
@@ -96,7 +149,7 @@ def extract_profile_and_price(basic_data, integration_data):
         "current_price": clean_number(basic_data.get("closePrice")),
         "change_price": clean_number(basic_data.get("compareToPreviousClosePrice")),
         "change_rate": clean_number(basic_data.get("fluctuationsRatio")),
-        "prev_close": clean_number(total_infos.get("lastClosePrice")),
+        "prev_close": clean_number(total_infos.get("lastClosePrice") or total_infos.get("basePrice")),
         "open_price": clean_number(total_infos.get("openPrice")),
         "high_price": clean_number(total_infos.get("highPrice")),
         "low_price": clean_number(total_infos.get("lowPrice")),
@@ -110,13 +163,18 @@ def extract_profile_and_price(basic_data, integration_data):
     return profile, price_info
 
 
-def extract_valuation(integration_data):
+def extract_valuation(integration_data, basic_data=None):
     """
-    integration JSON 응답에서
+    integration (및 해외주식용 basic) JSON 응답에서
     투자정보 및 밸류에이션(valuation: 시총, 외인소진율, PER/EPS, 추정PER/EPS, PBR/BPS,
     배당수익률/주당배당금, 컨센서스 목표주가/투자의견, 동일업종 비교 종목 요약)을 추출한다.
     """
     total_infos = {}
+    if basic_data:
+        for item in basic_data.get("stockItemTotalInfos", []):
+            code_key = item.get("code")
+            if code_key:
+                total_infos[code_key] = item.get("value")
     for item in integration_data.get("totalInfos", []):
         code_key = item.get("code")
         if code_key:
@@ -125,7 +183,14 @@ def extract_valuation(integration_data):
     consensus = integration_data.get("consensusInfo") or {}
 
     # 동일업종 대표 비교 종목 리스트(industryCompareInfo)에서 평균 등락률 및 비교 종목 요약 추출
-    peers_raw = integration_data.get("industryCompareInfo") or []
+    peers_obj = integration_data.get("industryCompareInfo")
+    if isinstance(peers_obj, dict):
+        peers_raw = peers_obj.get("globalStocks") or []
+    elif isinstance(peers_obj, list):
+        peers_raw = peers_obj
+    else:
+        peers_raw = []
+
     peers = []
     peer_rates = []
     for p in peers_raw[:5]:
@@ -133,7 +198,7 @@ def extract_valuation(integration_data):
         if rate is not None:
             peer_rates.append(rate)
         peers.append({
-            "code": p.get("itemCode"),
+            "code": p.get("itemCode") or p.get("symbolCode") or p.get("reutersCode"),
             "name": p.get("stockName"),
             "current_price": clean_number(p.get("closePrice")),
             "change_rate": rate
@@ -167,11 +232,13 @@ def extract_valuation(integration_data):
 FINANCE_ROW_MAP = {
     "매출액": "revenue",
     "영업이익": "operating_income",
+    "EBIT": "operating_income",
     "당기순이익": "net_income",
     "지배주주순이익": "controlling_net_income",
     "영업이익률": "operating_margin",
     "순이익률": "net_margin",
     "ROE": "roe",
+    "ROA": "roe",
     "부채비율": "debt_ratio",
     "당좌비율": "quick_ratio",
     "유보율": "reserve_ratio",
@@ -188,7 +255,7 @@ def parse_finance_period_list(finance_json):
     finance/annual 또는 finance/quarter 응답 JSON에서
     기간별(연도/분기) 실적 카드 리스트를 생성하고 is_consensus 신호등을 구분한다.
     """
-    finance_info = finance_json.get("financeInfo") or {}
+    finance_info = finance_json.get("financeInfo") or finance_json or {}
     tr_titles = finance_info.get("trTitleList") or []
     row_list = finance_info.get("rowList") or []
 
@@ -218,22 +285,68 @@ def parse_finance_period_list(finance_json):
     return periods
 
 
-def extract_financials(code):
+def extract_financials(code, is_global=False):
     """
     네이버 증권 연간(annual) 및 분기(quarter) 실적 JSON API를 호출하여
     분리된 시계열 실적 데이터를 반환한다.
     """
-    annual_url = f"https://m.stock.naver.com/api/stock/{code}/finance/annual"
-    quarter_url = f"https://m.stock.naver.com/api/stock/{code}/finance/quarter"
+    base = "https://api.stock.naver.com/stock" if is_global else "https://m.stock.naver.com/api/stock"
+    annual_url = f"{base}/{code}/finance/annual"
+    quarter_url = f"{base}/{code}/finance/quarter"
 
     annual_json = fetch_naver_json(annual_url)
     quarter_json = fetch_naver_json(quarter_url)
 
+    unit = annual_json.get("unit") or ("USD(백만). %, 배 생략" if is_global else "억원 (비율: %, 주당지표: 원/배)")
+
     return {
-        "unit": "억원 (비율: %, 주당지표: 원/배)",
+        "unit": unit,
         "annual": parse_finance_period_list(annual_json),
         "quarterly": parse_finance_period_list(quarter_json),
     }
+
+
+def extract_consensus_table(code, timeout=10):
+    """
+    네이버 증권(WiseReport) 컨센서스 테이블(cTB511) 데이터를 수집한다.
+    재무연월(A/E), 매출액, YoY, 영업이익, 당기순이익, EPS, BPS, PER, PBR, ROE, EV/EBITDA, 주재무제표를 반환한다.
+    """
+    url = "https://navercomp.wisereport.co.kr/company/ajax/c1050001_data.aspx"
+    params = {
+        "flag": "2",
+        "cmp_cd": code,
+        "finGubun": "MAIN",
+        "frq": "0",
+        "sDT": datetime.now().strftime("%Y%m%d"),
+        "chartType": "svg",
+    }
+    headers = {
+        "User-Agent": DEFAULT_HEADERS["User-Agent"],
+        "Referer": f"https://navercomp.wisereport.co.kr/v2/company/c1050001.aspx?cmp_cd={code}",
+    }
+    response = requests.get(url, params=params, headers=headers, timeout=timeout)
+    response.raise_for_status()
+    data = response.json()
+
+    rows = []
+    for item in data.get("JsonData") or []:
+        period = str(item.get("YYMM") or "").strip()
+        rows.append({
+            "period": period,
+            "is_consensus": "(E)" in period,
+            "revenue": clean_number(item.get("SALES")),
+            "yoy": clean_number(item.get("YOY")),
+            "operating_income": clean_number(item.get("OP")),
+            "net_income": clean_number(item.get("NP")),
+            "eps": clean_number(item.get("EPS")),
+            "bps": clean_number(item.get("BPS")),
+            "per": clean_number(item.get("PER")),
+            "pbr": clean_number(item.get("PBR")),
+            "roe": clean_number(item.get("ROE")),
+            "ev_ebitda": clean_number(item.get("EV")),
+            "accounting_standard": str(item.get("MAIN") or "").strip(),
+        })
+    return rows
 
 
 def fetch_serper_news(stock_name, num=5, timeout=10):
@@ -279,8 +392,7 @@ def fetch_serper_news(stock_name, num=5, timeout=10):
 
 def collect_stock_data(code):
     """
-    종목코드(6자리)를 받아 네이버 증권 데이터와 Serper 뉴스를 통합 수집한다.
-    (Step 15: 4차 구현 — 정식 종목명 기반 Serper News API 연동)
+    종목코드(국내 6자리 또는 미국/글로벌 티커)를 받아 네이버 증권 데이터와 Serper 뉴스를 통합 수집한다.
     """
     result = {
         "code": code,
@@ -288,41 +400,59 @@ def collect_stock_data(code):
         "price_info": {},
         "valuation": {},
         "financials": {"unit": "억원 (비율: %, 주당지표: 원/배)", "annual": [], "quarterly": []},
+        "consensus_table": [],
         "news": [],
         "errors": []
     }
 
-    if not code or not re.fullmatch(r"\d{6}", str(code).strip()):
-        result["errors"].append("종목코드는 6자리 숫자로 입력해 주세요.")
+    raw_code = str(code or "").strip()
+    if not raw_code or not re.fullmatch(r"[A-Za-z0-9.\-]{1,15}", raw_code):
+        result["errors"].append("국내 종목코드(6자리 숫자) 또는 해외 티커(예: AAPL, NVDA)를 입력해 주세요.")
         return result
 
-    code = str(code).strip()
-    basic_url = f"https://m.stock.naver.com/api/stock/{code}/basic"
-    integration_url = f"https://m.stock.naver.com/api/stock/{code}/integration"
+    is_domestic = bool(re.fullmatch(r"\d{6}", raw_code))
+    api_code = raw_code
 
     try:
-        logger.info(f"[NAVER] 네이버 증권 JSON API 호출 시작 (code={code}, User-Agent 적용)")
+        if is_domestic:
+            basic_url = f"https://m.stock.naver.com/api/stock/{api_code}/basic"
+            integration_url = f"https://m.stock.naver.com/api/stock/{api_code}/integration"
+        else:
+            api_code = resolve_global_reuters_code(raw_code)
+            basic_url = f"https://api.stock.naver.com/stock/{api_code}/basic"
+            integration_url = f"https://api.stock.naver.com/stock/{api_code}/integration"
+
+        logger.info(f"[NAVER] 네이버 증권 JSON API 호출 시작 (input={raw_code}, api_code={api_code}, domestic={is_domestic})")
         basic_data = fetch_naver_json(basic_url)
         integration_data = fetch_naver_json(integration_url)
 
         profile, price_info = extract_profile_and_price(basic_data, integration_data)
-        valuation = extract_valuation(integration_data)
+        valuation = extract_valuation(integration_data, basic_data=basic_data)
 
+        result["code"] = profile.get("code") or raw_code
         result["profile"] = profile
         result["price_info"] = price_info
         result["valuation"] = valuation
 
         # 기업실적분석(연간/분기) 수집 — 일부 오류가 나도 기본 시세/밸류에이션은 유지
         try:
-            financials = extract_financials(code)
+            financials = extract_financials(api_code, is_global=not is_domestic)
             result["financials"] = financials
         except Exception as fe:
             logger.error(f"[ERROR] 실적 데이터 수집 실패: {fe}", exc_info=True)
             result["errors"].append(f"기업실적분석 데이터를 가져오지 못했습니다: {fe}")
 
+        # 컨센서스 목록(cTB511) 수집 — 국내 종목 전용(해외는 WiseReport 미제공)
+        if is_domestic:
+            try:
+                result["consensus_table"] = extract_consensus_table(api_code)
+            except Exception as ce:
+                logger.warning(f"[WARN] 컨센서스 테이블 수집 실패: {ce}")
+
         logger.info(
             f"[PARSE] 프로필, 시세, 밸류에이션, 실적(연간 {len(result['financials']['annual'])}건, "
-            f"분기 {len(result['financials']['quarterly'])}건) 정제 완료 (name={profile.get('name')})"
+            f"분기 {len(result['financials']['quarterly'])}건, 컨센서스 {len(result['consensus_table'])}건) "
+            f"정제 완료 (name={profile.get('name')})"
         )
     except ValueError as ve:
         logger.error(f"[ERROR] 종목 조회 실패: {ve}")

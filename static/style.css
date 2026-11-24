@@ -46,6 +46,12 @@ body {
   display: none !important;
 }
 
+/* 분석/로딩 중 마우스 커서 표시 */
+body.is-loading,
+body.is-loading * {
+  cursor: progress !important;
+}
+
 /* 검색 영역 */
 .search-form {
   display: flex;
@@ -108,6 +114,337 @@ body {
 
 .chip-btn:hover {
   background-color: #e2e8f0;
+}
+
+/* 관심종목 고정 버튼 및 고정 바 */
+.chip-group {
+  display: inline-flex;
+  align-items: center;
+  border: 1px solid #cbd5e1;
+  border-radius: 999px;
+  background-color: #f8fafc;
+  overflow: hidden;
+}
+
+.chip-group .chip-btn {
+  border: none;
+  border-radius: 0;
+  background-color: transparent;
+}
+
+.chip-group .chip-btn:hover {
+  background-color: #e2e8f0;
+}
+
+.pin-btn {
+  border: none;
+  border-left: 1px solid #e2e8f0;
+  background-color: transparent;
+  padding: 5px 8px;
+  font-size: 0.78rem;
+  cursor: pointer;
+  opacity: 0.55;
+  transition: all 0.15s ease;
+}
+
+.pin-btn:hover {
+  opacity: 1;
+  background-color: #e2e8f0;
+}
+
+.pin-btn.pinned {
+  opacity: 1;
+  background-color: #dbeafe;
+  color: #1d4ed8;
+}
+
+.pinned-row {
+  padding: 8px 12px;
+  background-color: #fefce8;
+  border: 1px solid #fde68a;
+  border-radius: 8px;
+}
+
+.pinned-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.pinned-chip-group {
+  border-color: #f59e0b;
+  background-color: #ffffff;
+}
+
+/* 탭 4: 주린이를 위한 한줄 정리 */
+.oneline-summary-box {
+  padding: 16px 18px;
+  background: linear-gradient(135deg, #eff6ff 0%, #f0fdf4 100%);
+  border: 1px solid #bfdbfe;
+  border-left: 4px solid #2563eb;
+  border-radius: 10px;
+  font-size: 0.96rem;
+  color: #0f172a;
+  line-height: 1.65;
+  margin-bottom: 16px;
+}
+
+.average-price-box {
+  background-color: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 14px 18px;
+}
+
+.average-price-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+}
+
+.avg-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 8px 12px;
+  background-color: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+}
+
+.avg-label {
+  font-size: 0.8rem;
+  color: #64748b;
+  font-weight: 500;
+}
+
+.avg-value {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.avg-value.up {
+  color: #dc2626;
+}
+
+.avg-value.down {
+  color: #2563eb;
+}
+
+.summary-table td:first-child {
+  font-weight: 600;
+  color: #475569;
+  white-space: nowrap;
+}
+
+.summary-table td:last-child {
+  text-align: left;
+  color: #334155;
+}
+
+.avg-edit-form {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.avg-edit-form input {
+  flex: 1;
+  min-width: 140px;
+  padding: 8px 10px;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  font-size: 0.88rem;
+}
+
+.avg-edit-form button {
+  padding: 8px 16px;
+  background-color: #2563eb;
+  color: #ffffff;
+  border: none;
+  border-radius: 6px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+/* 설명 수준 선택 버튼 (초급 / 중급 / 고급) */
+.level-selector {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.level-label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #475569;
+}
+
+.level-btn {
+  padding: 5px 14px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  background-color: #f8fafc;
+  color: #475569;
+  border: 1px solid #cbd5e1;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.level-btn:hover {
+  background-color: #e2e8f0;
+  color: #0f172a;
+}
+
+.level-btn.active {
+  background-color: #2563eb;
+  color: #ffffff;
+  border-color: #2563eb;
+  box-shadow: 0 1px 3px rgba(37, 99, 235, 0.25);
+}
+
+/* 네이버 금융 스타일 컨센서스 위젯 */
+.consensus-widget {
+  margin-top: 18px;
+  padding: 16px 18px;
+  background-color: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  max-width: 420px;
+}
+
+.consensus-header {
+  margin-bottom: 12px;
+}
+
+.consensus-title-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 1rem;
+  font-weight: 700;
+  color: #0f172a;
+  text-decoration: none;
+}
+
+.consensus-title-link:hover {
+  color: #2563eb;
+}
+
+.consensus-graph {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.consensus-step {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+
+.consensus-bar {
+  width: 100%;
+  height: 26px;
+  border-radius: 6px;
+  background-color: #dfe3e8;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.2s ease;
+}
+
+.consensus-score {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #ffffff;
+}
+
+.consensus-step-label {
+  font-size: 0.78rem;
+  color: #64748b;
+  font-weight: 500;
+}
+
+.consensus-step.active.step-1 .consensus-bar { background-color: #2563eb; }
+.consensus-step.active.step-1 .consensus-step-label { color: #2563eb; font-weight: 700; }
+
+.consensus-step.active.step-2 .consensus-bar { background-color: #3b82f6; }
+.consensus-step.active.step-2 .consensus-step-label { color: #3b82f6; font-weight: 700; }
+
+.consensus-step.active.step-3 .consensus-bar { background-color: #64748b; }
+.consensus-step.active.step-3 .consensus-step-label { color: #475569; font-weight: 700; }
+
+.consensus-step.active.step-4 .consensus-bar { background-color: #f59e0b; }
+.consensus-step.active.step-4 .consensus-step-label { color: #d97706; font-weight: 700; }
+
+.consensus-step.active.step-5 .consensus-bar { background-color: #ef4444; }
+.consensus-step.active.step-5 .consensus-step-label { color: #dc2626; font-weight: 700; }
+
+.consensus-target-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 10px;
+}
+
+.consensus-target-label {
+  font-size: 0.92rem;
+  color: #475569;
+  font-weight: 500;
+}
+
+.consensus-target-value {
+  font-size: 1.35rem;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.consensus-desc-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  font-size: 0.78rem;
+  color: #64748b;
+  line-height: 1.5;
+}
+
+/* 이해도별 데이터 해설 박스 */
+.level-guide-box {
+  margin-top: 12px;
+  padding: 12px 14px;
+  background-color: #f8fafc;
+  border-left: 3px solid #2563eb;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  color: #334155;
+  line-height: 1.55;
+}
+
+.level-guide-box .guide-badge {
+  display: inline-block;
+  font-size: 0.74rem;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background-color: #dbeafe;
+  color: #1d4ed8;
+  margin-bottom: 6px;
+}
+
+.level-guide-box p {
+  margin: 4px 0 0;
 }
 
 /* 로딩 및 에러 배너 */
@@ -437,6 +774,22 @@ body {
   border-color: #2563eb;
 }
 
+.naver-link-btn {
+  display: inline-flex;
+  align-items: center;
+  text-decoration: none;
+  margin-left: auto;
+  color: #15803d;
+  border-color: #86efac;
+  background-color: #f0fdf4;
+}
+
+.naver-link-btn:hover {
+  background-color: #dcfce7;
+  color: #166534;
+  border-color: #4ade80;
+}
+
 .panel-desc {
   font-size: 0.88rem;
   color: #475569;
@@ -653,4 +1006,207 @@ body {
 .chat-bubble strong {
   color: #0f172a;
   font-weight: 700;
+}
+
+/* =====================================================
+   오리오(Orio) 스타일 웜 골드 · 틸 테마 (CSS 전용 디자인)
+   ===================================================== */
+body {
+  background: linear-gradient(180deg, #fdf5e4 0%, #f6e6c5 100%);
+  color: #2d2116;
+  min-height: 100vh;
+  padding: 0 16px 48px;
+}
+
+.page-header {
+  position: relative;
+  overflow: visible;
+  display: block;
+  min-height: auto;
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  padding: 0;
+  margin-bottom: 18px;
+  box-shadow: none;
+}
+
+.page-header::before {
+  content: "";
+  display: block;
+  width: 100vw;
+  margin-left: calc(50% - 50vw);
+  height: clamp(460px, 56.25vw, 760px);
+  background: url("/static/images/hero-banner-wide.jpg") center top / cover no-repeat;
+  -webkit-mask-image: linear-gradient(to bottom, #000 0%, #000 84%, transparent 100%);
+  mask-image: linear-gradient(to bottom, #000 0%, #000 84%, transparent 100%);
+}
+
+.page-header::after {
+  display: none;
+}
+
+.header-top {
+  position: relative;
+  z-index: 2;
+  padding: 6px 4px 0;
+  margin-bottom: 0;
+  justify-content: flex-end;
+}
+
+.header-top > div:first-child {
+  display: none;
+}
+
+.nav-link-btn {
+  background-color: rgba(255, 253, 248, 0.9);
+  color: #7c4d0f;
+  border: 1px solid #e6d0a4;
+  border-radius: 999px;
+  padding: 7px 14px;
+  font-weight: 600;
+  box-shadow: 0 2px 8px rgba(130, 86, 20, 0.08);
+}
+
+.nav-link-btn:hover {
+  background-color: #ffffff;
+}
+
+.tab-nav {
+  position: relative;
+  z-index: 2;
+  border-bottom: none;
+  padding: 10px 4px 6px;
+  margin-top: 0;
+}
+
+.tab-btn {
+  background-color: rgba(255, 255, 255, 0.86);
+  color: #4a3723;
+  border: 1px solid rgba(255, 255, 255, 0.65);
+  border-radius: 999px;
+  padding: 9px 16px;
+  box-shadow: 0 2px 6px rgba(102, 62, 6, 0.1);
+}
+
+.tab-btn:hover {
+  background-color: #ffffff;
+  color: #2d2116;
+}
+
+.tab-btn.active {
+  background-color: #1392a4;
+  color: #ffffff;
+  border-color: #1392a4;
+  box-shadow: 0 4px 12px rgba(19, 146, 164, 0.35);
+}
+
+.card {
+  background-color: #fffdf8;
+  border: 1px solid #eedcb8;
+  border-radius: 18px;
+  box-shadow: 0 8px 22px rgba(130, 86, 20, 0.08);
+}
+
+.section-title-row h3,
+.section-title-row h4 {
+  color: #2d2116;
+}
+
+.search-form input,
+.chat-input-form input,
+.avg-edit-form input {
+  background-color: #ffffff;
+  border: 1.5px solid #e6d1a7;
+  border-radius: 12px;
+}
+
+.search-form input:focus,
+.chat-input-form input:focus,
+.avg-edit-form input:focus {
+  border-color: #1392a4;
+  box-shadow: 0 0 0 3px rgba(19, 146, 164, 0.18);
+}
+
+.search-form button,
+.chat-input-form button,
+.avg-edit-form button {
+  background: linear-gradient(135deg, #169db0 0%, #0f8292 100%);
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(19, 146, 164, 0.25);
+}
+
+.search-form button:hover,
+.chat-input-form button:hover,
+.avg-edit-form button:hover {
+  background: linear-gradient(135deg, #12899a 0%, #0c6e7c 100%);
+}
+
+.chip-group {
+  background-color: #fff8ea;
+  border-color: #e6d0a4;
+}
+
+.chip-group .chip-btn:hover,
+.chip-btn:hover {
+  background-color: #fdead0;
+}
+
+.level-btn {
+  background-color: #fff8ea;
+  border-color: #e6d0a4;
+  color: #5c452d;
+}
+
+.level-btn.active {
+  background-color: #1392a4;
+  border-color: #1392a4;
+  color: #ffffff;
+  box-shadow: 0 3px 10px rgba(19, 146, 164, 0.28);
+}
+
+.metric-box,
+.average-price-box {
+  background-color: #fffaf0;
+  border-color: #eedcb8;
+  border-radius: 12px;
+}
+
+.avg-item {
+  border-color: #eedcb8;
+  border-radius: 10px;
+}
+
+.level-guide-box {
+  background-color: #f2fbfc;
+  border-left: 4px solid #1392a4;
+  border-radius: 10px;
+}
+
+.level-guide-box .guide-badge {
+  background-color: #d5f2f6;
+  color: #0e7482;
+}
+
+.oneline-summary-box {
+  background: linear-gradient(135deg, #fff8e6 0%, #eefbfc 100%);
+  border: 1px solid #e6d0a4;
+  border-left: 5px solid #e08d1e;
+  border-radius: 14px;
+}
+
+.chat-box {
+  border-color: #eedcb8;
+  border-radius: 14px;
+  background-color: #fffaf0;
+}
+
+.chat-msg.user .chat-bubble {
+  background: linear-gradient(135deg, #169db0 0%, #0f8292 100%);
+  color: #ffffff;
+}
+
+.chat-msg.assistant .chat-bubble {
+  background-color: #ffffff;
+  border-color: #eedcb8;
 }
