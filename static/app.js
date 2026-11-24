@@ -182,12 +182,71 @@ document.addEventListener("DOMContentLoaded", () => {
   const globalOverlay = document.getElementById("globalLoadingOverlay");
   const globalOverlayText = document.getElementById("globalLoadingText");
 
+  function getStockDisplayName(code) {
+    const clean = String(code || "").trim().toUpperCase();
+    if (!clean) return "선택한 종목";
+
+    const knownMap = {
+      "000660": "SK하이닉스",
+      "005930": "삼성전자",
+      "035420": "NAVER",
+      "069500": "KODEX 200",
+      "AAPL": "애플",
+      "NVDA": "엔비디아",
+      "TSLA": "테슬라",
+      "MSFT": "마이크로소프트"
+    };
+    if (knownMap[clean]) return knownMap[clean];
+
+    if (lastCollectedData && String(lastCollectedData.code || "").toUpperCase() === clean && lastCollectedData.profile && lastCollectedData.profile.name) {
+      return lastCollectedData.profile.name;
+    }
+
+    const chip = document.querySelector(`.stock-chip[data-code="${clean}"], .ta-chip[data-code="${clean}"]`);
+    if (chip) {
+      const label = chip.textContent.replace(/\([^)]*\)/g, "").trim();
+      if (label) return label;
+    }
+
+    const pinned = loadPinnedStocks().find((item) => String(item.code || "").toUpperCase() === clean);
+    if (pinned && pinned.label) {
+      const label = pinned.label.replace(/\([^)]*\)/g, "").trim();
+      if (label) return label;
+    }
+
+    return code;
+  }
+
+  const globalOverlayTip = document.getElementById("globalLoadingTip");
+  const LOADING_TIPS = [
+    "💡 관심 있는 종목은 옆의 📌 버튼으로 고정해 둘 수 있어요!",
+    "🐣 주린이들은 탭 4 [주린이를 위한 한줄 정리]부터 먼저 가보자!",
+    "🔍 탭 1에서는 국내 주식뿐 아니라 애플·엔비디아 같은 미국 주식과 KODEX 200도 분석할 수 있어요!",
+    "🌱 탭 1 상단의 초급 · 중급 · 고급 버튼으로 내 눈높이에 맞는 설명을 골라 보세요!",
+    "⚖️ 탭 2 [리밸런싱 도우미]에서 여러 종목의 최적 투자 비중을 한 번에 계산할 수 있어요!",
+    "📈 탭 3 [기술지표 차트]에서 이동평균선·RSI·볼린저밴드와 AI 해석을 함께 확인해 보세요!"
+  ];
+  let loadingTipTimer = null;
+  let loadingTipIndex = 0;
+
   function setGlobalLoading(active, message) {
     isRequestInFlight = active;
     document.body.classList.toggle("is-loading", active);
+    if (loadingTipTimer) {
+      clearInterval(loadingTipTimer);
+      loadingTipTimer = null;
+    }
     if (globalOverlay) {
       if (globalOverlayText && message) {
         globalOverlayText.textContent = message;
+      }
+      if (active && globalOverlayTip) {
+        loadingTipIndex = Math.floor(Math.random() * LOADING_TIPS.length);
+        globalOverlayTip.textContent = LOADING_TIPS[loadingTipIndex];
+        loadingTipTimer = setInterval(() => {
+          loadingTipIndex = (loadingTipIndex + 1) % LOADING_TIPS.length;
+          globalOverlayTip.textContent = LOADING_TIPS[loadingTipIndex];
+        }, 3500);
       }
       globalOverlay.classList.toggle("hidden", !active);
     }
@@ -724,9 +783,10 @@ document.addEventListener("DOMContentLoaded", () => {
       return;
     }
 
+    const stockDisplay = getStockDisplayName(code);
     window.InvestmentApp.stockConversationId = null;
     window.InvestmentApp.showError(stockTabError, "");
-    setGlobalLoading(true, `${code} 데이터를 수집하고 AI 분석 중입니다...`);
+    setGlobalLoading(true, `${stockDisplay} 종목을 분석하는 중입니다...`);
     stockAnalyzeBtn.disabled = true;
     stockAnalyzeBtn.textContent = "⏳ 분석 중...";
     stockChatSendBtn.disabled = true;
@@ -736,7 +796,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const loadingBubble = window.InvestmentApp.appendChatMessage(
       stockChatMessages,
       "assistant",
-      `\`${code}\` 데이터를 수집하고 AI 애널리스트 1차 종합 리포트를 작성 중입니다...`
+      `${stockDisplay} 데이터를 수집하고 AI 애널리스트 1차 종합 리포트를 작성 중입니다...`
     );
 
     console.log(`[SEARCH]  종목 조회 및 AI 1차 심층분석 시작 (code=${code})`);
@@ -956,8 +1016,10 @@ document.addEventListener("DOMContentLoaded", () => {
 
   rebalanceForm.addEventListener("submit", async (e) => {
     e.preventDefault();
+    if (isRequestInFlight) return;
     const codesText = rebalCodesInput.value.trim();
     window.InvestmentApp.showError(rebalTabError, "");
+    setGlobalLoading(true, "포트폴리오 리밸런싱을 계산 중입니다...");
     rebalCalcBtn.disabled = true;
     rebalLoading.classList.remove("hidden");
     console.log(`[REBAL]   리밸런싱 계산 요청 시작 (${codesText})`);
@@ -983,6 +1045,7 @@ document.addEventListener("DOMContentLoaded", () => {
       window.InvestmentApp.showError(rebalTabError, `서버 통신 오류: ${err.message}`);
       console.error(`[ERROR]   리밸런싱 통신 오류: ${err.message}`);
     } finally {
+      setGlobalLoading(false);
       rebalCalcBtn.disabled = false;
       rebalLoading.classList.add("hidden");
     }
@@ -1083,8 +1146,11 @@ document.addEventListener("DOMContentLoaded", () => {
 
   taForm.addEventListener("submit", async (e) => {
     e.preventDefault();
+    if (isRequestInFlight) return;
     const code = taCodeInput.value.trim();
+    const stockDisplay = getStockDisplayName(code);
     window.InvestmentApp.showError(taTabError, "");
+    setGlobalLoading(true, `${stockDisplay} 기술지표를 분석하는 중입니다...`);
     taLoadBtn.disabled = true;
     taLoading.classList.remove("hidden");
 
@@ -1110,6 +1176,7 @@ document.addEventListener("DOMContentLoaded", () => {
       window.InvestmentApp.showError(taTabError, `서버 통신 오류: ${err.message}`);
       console.error(`[ERROR]   기술지표 통신 오류: ${err.message}`);
     } finally {
+      setGlobalLoading(false);
       taLoadBtn.disabled = false;
       taLoading.classList.add("hidden");
     }
@@ -1117,6 +1184,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   taChatForm.addEventListener("submit", async (e) => {
     e.preventDefault();
+    if (isRequestInFlight) return;
     const query = taChatInput.value.trim();
     if (!query) return;
 
@@ -1124,12 +1192,13 @@ document.addEventListener("DOMContentLoaded", () => {
     window.InvestmentApp.showError(taTabError, "");
     window.InvestmentApp.appendChatMessage(taChatMessages, "user", query);
     taChatInput.value = "";
+    setGlobalLoading(true, "기술지표 해석 답변을 작성 중입니다...");
     taChatSendBtn.disabled = true;
 
     const loadingBubble = window.InvestmentApp.appendChatMessage(
       taChatMessages,
       "assistant",
-      "계산된 기술지표 숫자를 바탕으로 Dify 지표설명기가 해석 중입니다..."
+      "계산된 기술지표 숫자를 바탕으로 해석을 작성 중입니다..."
     );
 
     try {
@@ -1160,6 +1229,7 @@ document.addEventListener("DOMContentLoaded", () => {
       window.InvestmentApp.showError(taTabError, `서버 통신 오류: ${err.message}`);
       console.error(`[ERROR]   탭3 통신 오류: ${err.message}`);
     } finally {
+      setGlobalLoading(false);
       taChatSendBtn.disabled = false;
       taChatMessages.scrollTop = taChatMessages.scrollHeight;
     }
